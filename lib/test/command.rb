@@ -117,6 +117,7 @@ class Test::Command
     # writer thread does not block forever.
     @in_r.close unless @in_r.equal?(IO::NULL)
     @status = Process.waitpid2(Process.spawn("false")).last
+    self
   end
 
   ##

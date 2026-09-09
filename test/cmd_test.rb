@@ -239,5 +239,27 @@ class Test::Command
       assert_equal true, ::Test::Command.new("/a/path/that/is/not/found").command_not_found?
       assert_equal true, ::Test::Command.new("/a/path/that/is/not/found").not_found?
     end
+
+    def test_spawn_returns_self_when_not_found
+      command = ::Test::Command.new("/a/path/that/is/not/found")
+      assert_equal command, command.spawn
+    end
+
+    def test_spawn_sets_not_found_on_self
+      command = ::Test::Command.new("/a/path/that/is/not/found")
+      command.spawn
+      assert_equal true, command.not_found?
+    end
+
+    def test_stdout_when_not_found
+      command = ::Test::Command.new("/a/path/that/is/not/found")
+      assert_equal "", command.stdout
+    end
+
+    def test_stderr_when_not_found
+      command = ::Test::Command.new("/a/path/that/is/not/found")
+      assert_equal "No such file or directory - /a/path/that/is/not/found",
+                   command.stderr
+    end
   end
 end
