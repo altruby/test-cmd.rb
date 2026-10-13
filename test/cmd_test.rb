@@ -263,3 +263,44 @@ class Test::Command
     end
   end
 end
+
+class Test::Command
+  ##
+  # A command's status belongs to the command, and is not taken from
+  # another child that happens to be ready to be reaped.
+  #
+  # A bare `Process.wait` reaps whichever child is ready, so a child
+  # that has exited and been reaped by nobody - another test's, another
+  # thread's - could answer for a command that never spawned it.
+  class StatusTest < Test
+    def test_failure_is_not_answered_by_a_successful_decoy
+      decoy = Process.spawn("true")
+      sleep 0.1
+      assert_equal false, ::Test::Command.new("false").success?
+    ensure
+      reap(decoy)
+    end
+
+    def test_success_is_not_answered_by_a_failing_decoy
+      decoy = Process.spawn("false")
+      sleep 0.1
+      assert_equal true, ::Test::Command.new("true").success?
+    ensure
+      reap(decoy)
+    end
+
+    private
+
+    ##
+    # Reaps a decoy the command left alone, and says nothing when the
+    # command took it: the test that got there first is the point of
+    # these.
+    # @param [Integer, nil] pid
+    # @return [void]
+    def reap(pid)
+      Process.waitpid(pid) if pid
+    rescue Errno::ECHILD
+      nil
+    end
+  end
+end

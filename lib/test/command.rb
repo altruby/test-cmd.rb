@@ -102,8 +102,10 @@ class Test::Command
       @producer = Thread.new do
         @stdout = read_limited(@out.r, @limit[:stdout])
         @stderr = read_limited(@err.r, @limit[:stderr])
-        Process.wait
-        @status = $?
+        @status = Process.waitpid2(@pid).last
+      rescue Errno::ECHILD
+        errpid  = Process.spawn("false")
+        @status = Process.waitpid2(errpid).last
       ensure
         @out.r.close
         @err.r.close
