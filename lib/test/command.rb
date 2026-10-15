@@ -1,3 +1,5 @@
+require "rbconfig"
+
 module Test
 end unless defined?(Test)
 
@@ -104,8 +106,7 @@ class Test::Command
         @stderr = read_limited(@err.r, @limit[:stderr])
         @status = Process.waitpid2(@pid).last
       rescue Errno::ECHILD
-        errpid  = Process.spawn("false")
-        @status = Process.waitpid2(errpid).last
+        @status = failed_status
       ensure
         @out.r.close
         @err.r.close
@@ -118,7 +119,7 @@ class Test::Command
     # Close the read end of any input pipe so a pending
     # writer thread does not block forever.
     @in_r.close unless @in_r.equal?(IO::NULL)
-    @status = Process.waitpid2(Process.spawn("false")).last
+    @status = failed_status
     self
   end
 
@@ -323,5 +324,20 @@ class Test::Command
   def consume
     return unless @producer&.alive?
     @producer.join
+  end
+
+  ##
+  # A failed status for a command that has none of its own: one that could
+  # not be spawned at all, and one whose status another waiter took. A
+  # status comes from a child, so a child is spawned for the purpose and
+  # made to fail.
+  #
+  # **The child is the interpreter this library is running on**, because
+  # `false` is a Unix command and this library is not one. The not-found
+  # path raised `Errno::ENOENT` from inside its own rescue on Windows, and
+  # the caller was given that instead of `not_found?`.
+  # @return [Process::Status]
+  def failed_status
+    Process.waitpid2(Process.spawn(RbConfig.ruby, "-e", "exit 1")).last
   end
 end
