@@ -329,6 +329,8 @@ class Test::Command
   # Returns a failed status that works across Unix and Windows.
   # @return [Process::Status]
   def failed_status
-    Process.waitpid2(Process.spawn(RbConfig.ruby, "-e", "exit 1")).last
+    ruby = [RbConfig.ruby, "-e", "exit 1"]
+    _, status = Process.waitpid2 Process.spawn(*ruby)
+    status
   end
 end
