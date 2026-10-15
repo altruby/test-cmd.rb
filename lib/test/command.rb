@@ -5,6 +5,7 @@ end unless defined?(Test)
 # test-cmd.rb provides an object oriented interface
 # for spawning a command
 class Test::Command
+  require "rbconfig"
   require_relative "command/version"
 
   ##
@@ -104,8 +105,7 @@ class Test::Command
         @stderr = read_limited(@err.r, @limit[:stderr])
         @status = Process.waitpid2(@pid).last
       rescue Errno::ECHILD
-        errpid  = Process.spawn("false")
-        @status = Process.waitpid2(errpid).last
+        @status = failed_status
       ensure
         @out.r.close
         @err.r.close
@@ -118,7 +118,7 @@ class Test::Command
     # Close the read end of any input pipe so a pending
     # writer thread does not block forever.
     @in_r.close unless @in_r.equal?(IO::NULL)
-    @status = Process.waitpid2(Process.spawn("false")).last
+    @status = failed_status
     self
   end
 
@@ -323,5 +323,14 @@ class Test::Command
   def consume
     return unless @producer&.alive?
     @producer.join
+  end
+
+  ##
+  # Returns a failed status that works across Unix and Windows.
+  # @return [Process::Status]
+  def failed_status
+    ruby = [RbConfig.ruby, "-e", "exit 1"]
+    _, status = Process.waitpid2 Process.spawn(*ruby)
+    status
   end
 end

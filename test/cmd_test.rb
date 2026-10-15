@@ -261,6 +261,14 @@ class Test::Command
       assert_equal "No such file or directory - /a/path/that/is/not/found",
                    command.stderr
     end
+
+    def test_status_without_false_on_the_path
+      path = ENV["PATH"]
+      ENV["PATH"] = ""
+      assert_equal false, ::Test::Command.new("/a/path/that/is/not/found").success?
+    ensure
+      ENV["PATH"] = path
+    end
   end
 end
 
