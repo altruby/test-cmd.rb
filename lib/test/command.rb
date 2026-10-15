@@ -1,5 +1,3 @@
-require "rbconfig"
-
 module Test
 end unless defined?(Test)
 
@@ -7,6 +5,7 @@ end unless defined?(Test)
 # test-cmd.rb provides an object oriented interface
 # for spawning a command
 class Test::Command
+  require "rbconfig"
   require_relative "command/version"
 
   ##
@@ -327,15 +326,7 @@ class Test::Command
   end
 
   ##
-  # A failed status for a command that has none of its own: one that could
-  # not be spawned at all, and one whose status another waiter took. A
-  # status comes from a child, so a child is spawned for the purpose and
-  # made to fail.
-  #
-  # **The child is the interpreter this library is running on**, because
-  # `false` is a Unix command and this library is not one. The not-found
-  # path raised `Errno::ENOENT` from inside its own rescue on Windows, and
-  # the caller was given that instead of `not_found?`.
+  # Returns a failed status that works across Unix and Windows.
   # @return [Process::Status]
   def failed_status
     Process.waitpid2(Process.spawn(RbConfig.ruby, "-e", "exit 1")).last
