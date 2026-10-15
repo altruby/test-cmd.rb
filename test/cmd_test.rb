@@ -261,6 +261,19 @@ class Test::Command
       assert_equal "No such file or directory - /a/path/that/is/not/found",
                    command.stderr
     end
+
+    ##
+    # The status a command that was never spawned is given comes from this
+    # interpreter, not from `false`: with the path emptied, the command is
+    # still not found and still failed. `false` is a Unix command, so an
+    # empty PATH is the shape of a Windows machine for this purpose.
+    def test_status_without_false_on_the_path
+      path = ENV["PATH"]
+      ENV["PATH"] = ""
+      assert_equal false, ::Test::Command.new("/a/path/that/is/not/found").success?
+    ensure
+      ENV["PATH"] = path
+    end
   end
 end
 
